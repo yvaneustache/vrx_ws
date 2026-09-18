@@ -23,6 +23,17 @@ FROM ghcr.io/osrf/vrx-devel:latest
 
 USER root
 
+# GStreamer (headers dev) -- requis par le CMakeLists.txt de
+# src/ardupilot_gazebo (pkg_check_modules REQUIRED gstreamer-1.0
+# gstreamer-app-1.0, plugin camera/streaming video), absent de l'image de
+# base VRX -- sans ca, `colcon build` echoue directement sur ce paquet et
+# fait avorter toute la chaine de dependants (vrx_ros, wamv_description,
+# ardupilot_msgs...).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # mono (execute MissionPlanner.exe, application .NET Framework via mono) --
 # depot officiel mono-project.com, "stable-focal" reste la ligne recommandee
 # meme sur les Ubuntu plus recents (pas de republication par nom de code a
@@ -38,6 +49,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && apt-get update \
     && apt-get install -y --no-install-recommends mono-complete \
     && rm -rf /var/lib/apt/lists/*
+
+# Micro-XRCE-DDS-Gen -- generateur de code requis par la configuration waf
+# du wrapper ROS 2 d'ArduPilot (ardupilot/Tools/ros2/ardupilot_sitl, colcon
+# build echoue sinon avec "Could not find the program ['microxrceddsgen']").
+# Procedure officielle : https://ardupilot.org/dev/docs/ros2-install.html
+# openjdk-17 (pas default-jre=21 sur Ubuntu 24.04) : le Gradle 7.6 embarque
+# dans ce depot ne supporte pas les class files Java 21 ("Unsupported class
+# file major version 65"), constate en direct.
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless git \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --recurse-submodules \
+         https://github.com/ardupilot/Micro-XRCE-DDS-Gen.git \
+         /opt/Micro-XRCE-DDS-Gen \
+    && cd /opt/Micro-XRCE-DDS-Gen && ./gradlew assemble
+ENV PATH="/opt/Micro-XRCE-DDS-Gen/scripts:${PATH}"
 
 # mavlink-router -- relais MAVLink multi-client (MAVROS + Mission Planner en
 # parallele, voir PROPOSITION_SIMULATEUR_COMPLET.md §9). Binaire officiel,
