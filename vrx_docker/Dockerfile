@@ -32,6 +32,24 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgstreamer1.0-dev \
         libgstreamer-plugins-base1.0-dev \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-gl \
+        gstreamer1.0-libav \
+    && rm -rf /var/lib/apt/lists/*
+
+# MAVROS -- pont MAVLink/ROS2 (ros2 launch mavros apm.launch...) -- et joy
+# (joy_node, telecommande physique/synthetique, ros2 launch vrx_docking_sim
+# joystick_rc.launch.py). L'image de base VRX installe seulement
+# ros-jazzy-mavros-msgs et ros-jazzy-joy-linux (definitions de messages/
+# variante alternative), pas les paquets eux-memes -- decouvert en direct
+# via "Package 'mavros'/'joy' not found" sur un clone frais. Recherche
+# systematique du reste des dependances manquantes via `rosdep install
+# --from-paths src --ignore-src` (voir patches/apply_patches.sh pour le
+# contexte des sous-modules vendored) : plus rien d'autre ne manquait.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ros-${ROS_DISTRO}-mavros \
+        ros-${ROS_DISTRO}-mavros-extras \
+        ros-${ROS_DISTRO}-joy \
     && rm -rf /var/lib/apt/lists/*
 
 # mono (execute MissionPlanner.exe, application .NET Framework via mono) --
