@@ -381,6 +381,12 @@ rviz2 -d src/vrx_docking_sim/config/docking_vectors.rviz
 
 Un `colcon build` du workspace après ce travail doit produire un résultat identique à aujourd'hui pour tous les packages existants, plus `vrx_docking_sim` en plus.
 
+**Correction (2026-09-18) — le principe ci-dessus décrit `vrx_docking_sim` lui-même, pas l'état réel de `src/vrx`/`src/ardupilot_gazebo`.** En préparant le premier push GitHub du workspace, découvert que des sessions précédentes avaient bien édité directement plusieurs fichiers vendored de ces deux sous-modules (support `scale`/`ground_truth_enabled` dans `vrx_gz/model.py`, nouveaux fichiers `two_wamv.yaml`/`wamv_aft_thrusters_ardupilot.xacro`, plusieurs xacro WAM-V, et un vrai correctif de robustesse dans `ArduPilotPlugin.cc` — voir ci-dessous) — mais **seulement sur disque, jamais commité dans l'historique du sous-module ni capturé par le gitlink du sur-projet**, donc invisible à `git status` du sur-projet (à part `modified content`) et **perdu à chaque `git clone --recurse-submodules` frais** (confirmé en direct : `set_scale` absent, `ros2 launch vrx_docking_sim docking_sim_spawn.launch.py` plantait avec `'Model' object has no attribute 'set_scale'`).
+
+Persisté proprement plutôt que corrigé silencieusement en re-modifiant les fichiers vendored à la main (ce qui aurait reproduit exactement le même problème pour le clone *suivant*) : deux patches versionnés dans le nouveau dossier `patches/` (`vrx.patch`, `ardupilot_gazebo.patch`, générés par `git diff` + `git add -N` sur les fichiers non suivis), appliqués par `patches/apply_patches.sh` (idempotent — sûr à relancer). Étape à ajouter après `git submodule update --init --recursive` et avant `colcon build` dans toute procédure d'installation.
+
+Correctif notable capturé dans `ardupilot_gazebo.patch` (`src/ArduPilotPlugin.cc`) : `imuInitialized` n'était mis à `true` qu'une seule fois, **inconditionnellement**, même si le capteur IMU n'était pas encore trouvé — correct pour un modèle présent dans le monde dès `t=0`, mais pour un modèle spawné dynamiquement à l'exécution (notre cas, via `vrx_gz.launch.spawn()`), le système `Sensors` peut ne pas avoir encore créé l'entité IMU au premier `PreUpdate()` du plugin, qui abandonnait alors définitivement. Corrigé pour réessayer aux ticks suivants au lieu d'abandonner après un seul échec.
+
 ---
 
 ## 9. Découpage en livrables
