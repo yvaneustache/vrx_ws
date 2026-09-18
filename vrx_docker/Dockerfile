@@ -46,19 +46,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # systematique du reste des dependances manquantes via `rosdep install
 # --from-paths src --ignore-src` (voir patches/apply_patches.sh pour le
 # contexte des sous-modules vendored) : plus rien d'autre ne manquait.
+# `apt-get upgrade` general (pas des --only-upgrade cibles au coup par
+# coup) : mavros/mavros-extras (frais du depot, compiles debut sept. 2026)
+# sont ABI-incompatibles avec plusieurs paquets deja installes par l'image
+# de base a une version plus ancienne (ros-jazzy-diagnostic-updater 4.2.6,
+# ros-jazzy-mavros-msgs 2.12.0...) -- `apt install ros-jazzy-mavros` seul
+# ne force la mise a jour d'aucune dependance deja "satisfaite" au sens du
+# .deb (aucune contrainte de version stricte declaree). Deux "undefined
+# symbol" differents rencontres en corrigeant celles-ci une par une
+# (diagnostic_updater::Updater puis mavros_msgs::ObstacleDistance3D_) --
+# plutot que d'attendre le prochain plugin mavros qui casse pour la meme
+# raison, upgrade general de tout ce qui est deja installe.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-${ROS_DISTRO}-mavros \
         ros-${ROS_DISTRO}-mavros-extras \
         ros-${ROS_DISTRO}-joy \
-    # mavros_node plante au demarrage avec "undefined symbol:
-    # ...UpdaterC1..." sans cet upgrade explicite : la version de
-    # ros-jazzy-diagnostic-updater deja installee par l'image de base
-    # (4.2.6) est ABI-incompatible avec celle contre laquelle mavros a ete
-    # compile (le constructeur Updater a change de signature) -- `apt
-    # install ros-jazzy-mavros` seul ne force pas la mise a jour d'une
-    # dependance deja "satisfaite" au sens du .deb (aucune contrainte de
-    # version stricte declaree), il faut l'upgrade explicitement.
-    && apt-get install -y --only-upgrade ros-${ROS_DISTRO}-diagnostic-updater \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Jeu de donnees geoide GeographicLib -- sans ca, mavros_node plante au

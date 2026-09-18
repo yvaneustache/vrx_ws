@@ -28,3 +28,6 @@ tools/mavlink-routerd
 
 # Configuration d'editeur locale
 .vscode/
+
+# Bytecode Python compile
+__pycache__/
