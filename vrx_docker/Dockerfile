@@ -57,4 +57,29 @@ RUN python3 -m venv /opt/ardupilot-venv --system-site-packages \
          empy==3.3.4 pymavlink MAVProxy pexpect future lxml pyserial pyyaml numpy pillow
 ENV PATH="/opt/ardupilot-venv/bin:${PATH}"
 
-USER ubuntu
+# Remplace l'utilisateur "ubuntu" (uid 1000) de l'image de base par
+# "eustache" -- docker run utilise --user 1000:1000 (uid brut, sans nom) +
+# --volume /home/eustache:/home/eustache, donc le nom resolu pour ce uid
+# doit correspondre a l'utilisateur hote reel, sinon le prompt affiche
+# "ubuntu@..." au lieu de "eustache@...". Reproduit ce que faisait
+# `rocker --user` auparavant sur l'ancienne image (vu dans son historique
+# de build : userdel de l'utilisateur existant a cet uid, puis useradd).
+RUN userdel -r ubuntu 2>/dev/null; \
+    groupadd -g 1000 eustache 2>/dev/null; \
+    useradd --no-log-init --uid 1000 --gid 1000 \
+        -G sudo,video,plugdev,dialout,input,render \
+        -s /bin/bash -d /home/eustache -m eustache \
+    && echo "eustache ALL=NOPASSWD: ALL" > /etc/sudoers.d/eustache
+
+# GID 110 = groupe "render" sur CETTE machine hote (verifie avec
+# `getent group 110`) -- --gpus all (nvidia-container-runtime) l'injecte
+# automatiquement comme groupe secondaire du conteneur pour l'acces au
+# device GPU, mais aucune entree /etc/group du conteneur n'a ce GID (le
+# groupe "render" interne a l'image a un GID different) : `groups`/le
+# prompt affichaient "cannot find name for group ID 110". Un nom
+# quelconque a ce GID suffit a lever l'avertissement -- specifique a cette
+# machine, a ajuster (`getent group $(id -g video)` cote hote) si
+# reconstruit ailleurs.
+RUN groupadd -g 110 hostrender 2>/dev/null || true
+
+USER eustache
