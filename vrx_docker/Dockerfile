@@ -61,6 +61,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --only-upgrade ros-${ROS_DISTRO}-diagnostic-updater \
     && rm -rf /var/lib/apt/lists/*
 
+# Jeu de donnees geoide GeographicLib -- sans ca, mavros_node plante au
+# demarrage ("GeographicLib exception: File not readable .../egm96-5.pgm",
+# necessaire pour convertir altitude ellipsoidale <-> MSL). Script officiel
+# fourni par mavros lui-meme, procedure standard de sa doc d'installation.
+RUN /opt/ros/jazzy/lib/mavros/install_geographiclib_datasets.sh
+
 # mono (execute MissionPlanner.exe, application .NET Framework via mono) --
 # depot officiel mono-project.com, "stable-focal" reste la ligne recommandee
 # meme sur les Ubuntu plus recents (pas de republication par nom de code a
