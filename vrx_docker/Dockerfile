@@ -50,6 +50,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-${ROS_DISTRO}-mavros \
         ros-${ROS_DISTRO}-mavros-extras \
         ros-${ROS_DISTRO}-joy \
+    # mavros_node plante au demarrage avec "undefined symbol:
+    # ...UpdaterC1..." sans cet upgrade explicite : la version de
+    # ros-jazzy-diagnostic-updater deja installee par l'image de base
+    # (4.2.6) est ABI-incompatible avec celle contre laquelle mavros a ete
+    # compile (le constructeur Updater a change de signature) -- `apt
+    # install ros-jazzy-mavros` seul ne force pas la mise a jour d'une
+    # dependance deja "satisfaite" au sens du .deb (aucune contrainte de
+    # version stricte declaree), il faut l'upgrade explicitement.
+    && apt-get install -y --only-upgrade ros-${ROS_DISTRO}-diagnostic-updater \
     && rm -rf /var/lib/apt/lists/*
 
 # mono (execute MissionPlanner.exe, application .NET Framework via mono) --
