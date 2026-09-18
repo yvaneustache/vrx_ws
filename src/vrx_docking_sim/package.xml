@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>vrx_docking_sim</name>
+  <version>0.0.1</version>
+  <description>Complete docking simulator: USV and dock as ROS 2 nodes ported from docking/guerleboat and docking/guerledocking, dock pose broadcast over UDP, ArduPilot Rover SITL driving the USV motors directly, Mission Planner supervision, RC-style joystick, APF field/setpoint visualization. Strictly additive: does not modify vrx_apf_dock, vrx_apf_dock_teleop or vrx_ardupilot, which keep working unchanged. See PROPOSITION_SIMULATEUR_COMPLET.md and CORRESPONDANCE_DOCKING.md at the workspace root.</description>
+
+  <maintainer email="yvan.eustache@gmail.com">Yvan Eustache</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>vrx_gz</exec_depend>
+  <exec_depend>vrx_apf_dock</exec_depend>
+  <exec_depend>wamv_gazebo</exec_depend>
+  <exec_depend>wamv_description</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>mavros_msgs</exec_depend>
+  <exec_depend>joy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

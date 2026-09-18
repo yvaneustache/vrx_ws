@@ -1,0 +1,100 @@
+# Nouveau composant, sans equivalent dans docking/ — voir CORRESPONDANCE_DOCKING.md
+#
+# Reglage du Rover skid-steer specifique a l'echelle/dynamique de ce WAM-V
+# (scale 0.5, voir docking_sim.yaml), au-dessus des defauts partages
+# rover.parm/rover-skid.parm (non modifies -- fichier additif, charge en
+# dernier dans la chaine --defaults de l'alias ARDUPILOT_SITL).
+#
+# Suit la procedure officielle ArduPilot Rover :
+#   https://ardupilot.org/rover/docs/rover-tuning-steering-rate.html
+#   https://ardupilot.org/rover/docs/rover-tuning-process.html
+# ACRO_TURN_RATE / ATC_STR_RAT_MAX : mesures en direct (ManualControl a
+# pleine barre, taux de lacet observe sur la verite terrain Gazebo) --
+# ~42-54 deg/s au maximum physique de ce hull, quelle que soit la vitesse
+# d'avancement testee (~1 a ~4.4 m/s). ATC_STR_RAT_FF calibre a partir de
+# cette mesure (FF = 1/taux_max_rad_s). P ~20% de FF, I quasi nul --
+# "D gain can normally be left at zero" pour Rover (different de Copter) ;
+# D est reparti a une petite valeur non nulle par affinage manuel ulterieur
+# (valeurs ci-dessous = derniere config validee en direct, pas figees).
+# IMAX resserre a 0.2 (defaut ArduPilot 1.0, la sortie normalisee entiere) :
+# FF seul atteint deja ~1.0-1.07 a la cible max (45 deg/s), donc aucune
+# marge ne reste pour I/P sans ce garde-fou -- verifie sans regression sur
+# la saturation (0% en croisiere, seul le virage initial de mise en cap
+# sature brievement, attendu).
+# Sans ce reglage, le PID de cap sature en continu (mesure directe sur
+# /wamv/thrusters/{left,right}/thrust via gz-transport), un zigzag visible
+# en AUTO/GUIDED des que le virage demande plus que la capacite physique.
+#
+# CRUISE_THROTTLE recalibre empiriquement (vitesse reelle mesuree en ligne
+# droite a throttle constant, pas la valeur par defaut de rover-skid.parm
+# qui ne correspond pas a cette echelle) -- indispensable des que
+# CRUISE_SPEED est modifie, sinon la boucle vitesse/position se desynchronise
+# meme si la vitesse instantanee semble stable.
+#
+# TURN_RADIUS et ATC_ACCEL_MAX doivent rester coherents avec WP_SPEED (le
+# rayon de virage et la distance de freinage doivent correspondre a la
+# vitesse de croisiere courante, sinon le bateau arrive aux virages avec
+# plus d'energie que ce que la boucle de cap peut absorber -- a recalculer
+# si WP_SPEED/CRUISE_SPEED changent encore).
+#
+# PSC_VEL_D/FF : la boucle externe vitesse/position etait en P pur (aucun
+# amortissement), ce qui "chassait" en continu meme une fois la boucle de
+# cap interne corrigee -- ajoute apres coup, en testant specifiquement sur
+# un troncon en ligne droite pour isoler cette boucle de la boucle de cap.
+#
+# ATC_STR_RAT_D/I ramenes quasi a zero (affinage manuel en direct par
+# l'utilisateur, "j'ai supprime le D du steering rate") : a l'usage, meme
+# le D "petit non nul" issu du premier calibrage restait une source de
+# sensibilite au bruit d'estimation -- confirme sans regression (mission
+# AUTO complete + approche GUIDED de docking, 0% saturation, convergence
+# lisse et sans oscillation une fois FF/P seuls porteurs de la boucle).
+#
+# TURN_RADIUS remonte de 1.0 a 12.0 : la valeur precedente etait calibree
+# pour un WP_SPEED plus bas ; a WP_SPEED=2.0 elle demandait un taux de
+# virage superieur a ATC_STR_RAT_MAX en virage serre. 12.0 conserve une
+# marge sous la capacite physique mesuree du hull (~45 deg/s max) tout en
+# restant coherent avec les rayons de virage reels de la mission.
+
+ACRO_TURN_RATE 45
+ATC_STR_RAT_MAX 45
+ATC_STR_RAT_FF 1.3642
+ATC_STR_RAT_P 0.27
+ATC_STR_RAT_I 0.001
+ATC_STR_RAT_D 0.001
+ATC_STR_RAT_IMAX 0.2
+ATC_STR_RAT_FLTD 10
+ATC_ACCEL_MAX 1.0
+TURN_RADIUS 12.0
+WP_SPEED 2.0
+CRUISE_SPEED 3
+CRUISE_THROTTLE 51
+PSC_VEL_D 0.1
+PSC_VEL_FF 0.2
+PSC_VEL_P 1.0
+PSC_POS_P 0.2
+
+# INS_GYRO_FILTER : bruit residuel constate sur le gyro/compas a l'arret
+# ("a l'arret le cap du drone oscille") alors que la verite terrain Gazebo
+# est parfaitement plate (<0.001 deg sur 4s) -- confirme via
+# /mavros/imu/data.angular_velocity.z (bruit +-0.1-0.2 rad/s sur l'axe z
+# uniquement, x/y quasi nuls) pendant que SIM_GYR1_RND/SIM_ACC1_RND
+# valent 0 (pas de bruit gyro scripte cote ArduPilot) -- donc un artefact
+# numerique deterministe du solveur de flottabilite/hydrodynamique de
+# Gazebo (micro-couples de contact a chaque pas de physique), pas du bruit
+# de mesure aleatoire : la sequence observee sur compass_hdg se repete a
+# l'identique (meme cycle de valeurs) plutot que de varier aleatoirement.
+# Deja tres serre par rover-skid.parm (4 Hz) ; resserre encore a 1 Hz --
+# largement suffisant pour la dynamique lente de ce hull (~1 m/s, boucle
+# de cap a quelques rad/s max) -- necessite un redemarrage a froid de SITL
+# pour s'appliquer (le filtre INS ne se reinitialise pas sur un simple
+# ros2/param set en direct, verifie : aucun changement mesure sur
+# compass_hdg apres un set live).
+INS_GYRO_FILTER 1.0
+
+# MAV_GCS_SYSID (ex SYSID_MYGCS) : MAVROS emet avec le sysid 1, sans ce
+# reglage GCS_MAVLink::handle_manual_control() rejette silencieusement tout
+# MANUAL_CONTROL (voir GCS_Common.cpp, gcs().sysid_is_gcs()). Deja corrige
+# via ros2 param set puis persiste dans l'eeprom.bin de l'instance SITL,
+# mais l'eeprom ne survit pas a un --wipe-eeprom ni a sa suppression -- le
+# mettre ici aussi pour ne plus en dependre.
+MAV_GCS_SYSID 1

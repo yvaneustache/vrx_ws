@@ -1,0 +1,40 @@
+# Nouveau composant, sans equivalent dans docking/ — voir CORRESPONDANCE_DOCKING.md
+#
+# PLUS UTILISE PAR docking_sim_spawn.launch.py (voir son docstring) : le
+# spawn se fait maintenant en construisant les vrx_gz.model.Model directement
+# en Python (nécessaire pour donner un xacro personnalisé à l'USV, voir
+# urdf/wamv_gazebo_ned_fix.urdf.xacro), pas via ce fichier. Conservé ici
+# uniquement comme trace des positions de spawn d'origine.
+#
+# Spawn config for the docking simulator (livrable 1): one WAM-V flown by
+# ArduPilot Rover SITL (the USV, "wamv", ardupilot: true — same mechanism as
+# vrx_ardupilot/config/ardupilot_wamv.yaml) plus a second, plain-physics
+# WAM-V standing in for the dock ("wamv2", no ardupilot field — same
+# mechanism as vrx/vrx_gz/config/two_wamv.yaml). Neither of those two
+# existing files is modified; this is a new, third config.
+#
+# Positions are provisional (USV position copied from the known-good
+# ardupilot_wamv.yaml spawn point; dock offset chosen only to avoid
+# collision at spawn) — to be tuned once the docking approach geometry is
+# validated (see PROPOSITION_SIMULATEUR_COMPLET.md, livrables 3-4).
+#
+# USV scale 0.5 vs dock scale 1 (default): same ratio as the proven
+# vrx/vrx_gz/config/two_wamv.yaml (Mode A) — the smaller USV physically
+# fits inside the larger dock hull instead of colliding with it during
+# final approach (see livrable 4 investigation: the ~1 m/s dock "drift"
+# was a hull-to-hull contact push at scale 1:1, not a hydrodynamics bug —
+# confirmed via a fresh, idle-spawn test showing zero drift at rest).
+
+- model_name: wamv
+  model_type: wam-v
+  ardupilot: true
+  scale: 0.5
+  position:
+    xyz: [-532, 162, 0]
+    rpy: [0, 0, 0]
+
+- model_name: wamv2
+  model_type: wam-v
+  position:
+    xyz: [-517, 182, 0]
+    rpy: [0, 0, 0]

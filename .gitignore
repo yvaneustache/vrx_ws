@@ -1,0 +1,30 @@
+# Artefacts de build ROS 2 / colcon -- regeneres par `colcon build`
+build/
+install/
+log/
+
+# Etat runtime de l'instance SITL ArduPilot (logs de vol .BIN, eeprom) --
+# regenere a chaque lancement, aucun interet en controle de version (voir
+# vrx_docking_sim/config/rover_tuning.parm pour les parametres qui, eux,
+# doivent etre versionnes).
+vrx_ardupilot_sitl_instance1/
+eeprom.bin
+
+# Logs de session mavlink/telemetrie
+logs/
+*.tlog
+*.tlog.raw
+
+# Environnement virtuel Python local (specifique a la machine)
+my-venv/
+
+# Installation Mission Planner (application tierce, pas du code source)
+MissionPlanner/
+
+# Binaire compile de mavlink-router (voir PROPOSITION_SIMULATEUR_COMPLET.md
+# §9 -- installe manuellement dans tools/ pour survivre aux recreations du
+# conteneur Docker, mais reste un binaire tiers, pas du code source)
+tools/mavlink-routerd
+
+# Configuration d'editeur locale
+.vscode/

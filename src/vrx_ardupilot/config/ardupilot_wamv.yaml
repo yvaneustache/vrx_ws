@@ -1,0 +1,7 @@
+- model_name: wamv
+  model_type: wam-v
+  ardupilot: true
+  scale: 1
+  position:
+    xyz: [-532, 162, 0]
+    rpy: [0, 0, 0]

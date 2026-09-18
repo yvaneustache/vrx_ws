@@ -1,0 +1,9 @@
+[submodule "ardupilot"]
+	path = ardupilot
+	url = https://github.com/ArduPilot/ardupilot.git
+[submodule "src/vrx"]
+	path = src/vrx
+	url = https://github.com/osrf/vrx.git
+[submodule "src/ardupilot_gazebo"]
+	path = src/ardupilot_gazebo
+	url = https://github.com/ArduPilot/ardupilot_gazebo
